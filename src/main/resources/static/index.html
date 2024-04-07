@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Schedule Message</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        input[type="datetime-local"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        #response {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Schedule Message</h1>
+        <form id="scheduleForm">
+            <label for="message">Message:</label>
+            <input type="text" id="message" name="message">
+
+            <label for="phone">Phone:</label>
+            <input type="text" id="phone" name="phone">
+
+            <label for="scheduleTime">Schedule Time:</label>
+            <input type="datetime-local" id="scheduleTime" name="scheduleTime">
+
+            <label for="apiKey">API Key:</label>
+            <input type="text" id="apiKey" name="apiKey">
+
+            <button type="submit">Schedule</button>
+        </form>
+        <div id="response"></div>
+    </div>
+    
+    <script>
+        document.getElementById("scheduleForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const requestBody = {
+                message: formData.get("message"),
+                phoneNumber: formData.get("phone"),
+                scheduleTime: formData.get("scheduleTime"),
+            };
+            const apiKey = formData.get("apiKey");
+            
+            // Convert the scheduled time to ISO string format
+            const scheduleTime = new Date(requestBody.scheduleTime).toISOString();
+
+            // Check if schedule time is in the future
+            const currentTime = new Date().getTime();
+            if (new Date(scheduleTime).getTime() <= currentTime) {
+                alert("Please select a future date and time.");
+                return;
+            }
+
+            fetch("/schedule/message", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "token": apiKey
+                },
+                body: JSON.stringify({ ...requestBody, scheduleTime: scheduleTime })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to schedule message.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Display popup upon successful scheduling
+                alert(data.message);
+                document.getElementById("response").innerText = JSON.stringify(data);
+            })
+            .catch(error => {
+                // Display popup upon failure
+                alert(error.message);
+                console.error("Error:", error);
+            });
+        });
+    </script>
+</body>
+</html>
